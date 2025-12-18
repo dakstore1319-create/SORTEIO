@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Amigo Secreto</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body { font-family: Arial; background:#f2f2f2; padding:20px; }
+.box { max-width:400px; margin:auto; background:#fff; padding:20px; border-radius:10px; }
+input, button { width:100%; padding:10px; margin:5px 0; }
+button { background:#28a745; color:#fff; border:none; }
+.hidden { display:none; }
+</style>
+</head>
+<body>
+
+<div class="box">
+<h2>🎁 Amigo Secreto</h2>
+
+<div id="admin">
+<input id="nome" placeholder="Nome do participante">
+<button onclick="add()">Adicionar</button>
+<div id="lista"></div>
+<button onclick="sortear()">🔒 Fazer sorteio</button>
+</div>
+
+<div id="consulta" class="hidden">
+<input id="consultaNome" placeholder="Digite seu nome">
+<button onclick="ver()">Ver meu amigo</button>
+</div>
+</div>
+
+<script>
+let participantes = JSON.parse(localStorage.getItem("participantes")) || [];
+let sorteados = JSON.parse(localStorage.getItem("sorteados")) || {};
+let sorteioFeito = localStorage.getItem("sorteioFeito") === "true";
+
+const admin = document.getElementById("admin");
+const consulta = document.getElementById("consulta");
+const lista = document.getElementById("lista");
+
+function salvar() {
+    localStorage.setItem("participantes", JSON.stringify(participantes));
+    localStorage.setItem("sorteados", JSON.stringify(sorteados));
+    localStorage.setItem("sorteioFeito", sorteioFeito);
+}
+
+function mostrarLista() {
+    lista.innerHTML = participantes.join("<br>");
+}
+
+function add() {
+    let n = nome.value.trim();
+    if (!n || participantes.includes(n) || sorteioFeito) return;
+    participantes.push(n);
+    salvar();
+    nome.value = "";
+    mostrarLista();
+}
+
+function sortear() {
+    if (participantes.length < 2) return alert("Mínimo 2 pessoas");
+
+    let disp = [...participantes];
+    sorteados = {};
+
+    participantes.forEach(p => {
+        let poss = disp.filter(n => n !== p);
+        let esc = poss[Math.floor(Math.random() * poss.length)];
+        sorteados[p] = esc;
+        disp = disp.filter(n => n !== esc);
+    });
+
+    sorteioFeito = true;
+    salvar();
+    atualizarTela();
+}
+
+function ver() {
+    let n = consultaNome.value.trim();
+    if (!sorteados[n]) return alert("Nome inválido ou já visto");
+    alert("🎁 Seu amigo secreto é:\n\n" + sorteados[n]);
+    delete sorteados[n];
+    salvar();
+}
+
+function atualizarTela() {
+    if (sorteioFeito) {
+        admin.classList.add("hidden");
+        consulta.classList.remove("hidden");
+    } else {
+        admin.classList.remove("hidden");
+        consulta.classList.add("hidden");
+        mostrarLista();
+    }
+}
+
+atualizarTela();
+</script>
+
+</body>
+</html>
