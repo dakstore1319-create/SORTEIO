@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Amigo Secreto Seguro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { font-family: Arial; background:#f2f2f2; padding:20px; }
+.container { max-width:420px; margin:auto; background:#fff; padding:20px; border-radius:10px; }
+input, button { width:100%; padding:10px; margin:6px 0; }
+button { background:#007bff; color:#fff; border:none; cursor:pointer; }
+button:hover { background:#0056b3; }
+.hidden { display:none; }
+.list { background:#eee; padding:10px; border-radius:5px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>🎁 Amigo Secreto</h2>
+
+<div id="admin">
+    <input id="nome" placeholder="Nome do participante">
+    <input id="senha" placeholder="Senha" type="password">
+    <button onclick="add()">Adicionar</button>
+    <div class="list" id="lista"></div>
+    <button onclick="sortear()">🔒 Iniciar Sorteio</button>
+</div>
+
+<div id="login" class="hidden">
+    <h3>Consultar Amigo Secreto</h3>
+    <input id="loginNome" placeholder="Seu nome">
+    <input id="loginSenha" placeholder="Sua senha" type="password">
+    <button onclick="consultar()">Ver meu amigo</button>
+</div>
+
+</div>
+
+<script>
+let participantes = [];
+let credenciais = {};
+let sorteados = {};
+
+function add() {
+    let n = nome.value.trim();
+    let s = senha.value.trim();
+    if (!n || !s || credenciais[n]) return;
+
+    participantes.push(n);
+    credenciais[n] = s;
+    lista.innerHTML += n + "<br>";
+    nome.value = senha.value = "";
+}
+
+function sortear() {
+    if (participantes.length < 2) return alert("Mínimo 2 participantes");
+
+    let disponiveis = [...participantes];
+    participantes.forEach(p => {
+        let possiveis = disponiveis.filter(n => n !== p);
+        let escolhido = possiveis[Math.floor(Math.random() * possiveis.length)];
+        sorteados[p] = escolhido;
+        disponiveis = disponiveis.filter(n => n !== escolhido);
+    });
+
+    admin.classList.add("hidden");
+    login.classList.remove("hidden");
+}
+
+function consultar() {
+    let n = loginNome.value.trim();
+    let s = loginSenha.value.trim();
+
+    if (!sorteados[n] || credenciais[n] !== s) {
+        alert("Dados inválidos ou já consultado");
+        return;
+    }
+
+    alert("🎁 Seu amigo secreto é:\n\n" + sorteados[n]);
+    delete sorteados[n];
+}
+</script>
+
+</body>
+</html>
