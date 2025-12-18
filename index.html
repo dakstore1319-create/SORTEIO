@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Amigo Secreto</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+body { font-family: Arial; background:#f2f2f2; padding:20px; }
+.box { max-width:400px; margin:auto; background:#fff; padding:20px; border-radius:10px; }
+input, button { width:100%; padding:10px; margin:5px 0; }
+button { background:#007bff; color:#fff; border:none; }
+.hidden { display:none; }
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h2>🎁 Amigo Secreto</h2>
+
+<div id="admin">
+<input id="nome" placeholder="Nome do participante">
+<input id="senha" placeholder="Senha" type="password">
+<button onclick="add()">Adicionar</button>
+<div id="lista"></div>
+<button onclick="sortear()">🔒 Fazer sorteio</button>
+</div>
+
+<div id="consulta" class="hidden">
+<input id="consultaNome" placeholder="Seu nome">
+<input id="consultaSenha" placeholder="Sua senha" type="password">
+<button onclick="ver()">Ver meu amigo</button>
+</div>
+</div>
+
+<script>
+const firebaseConfig = {
+  // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyASqsESKhjNK-p6BXhPwWgj7R-XmRJCzo4",
+  authDomain: "amigo-secreto-4fbd5.firebaseapp.com",
+  databaseURL: "https://amigo-secreto-4fbd5-default-rtdb.firebaseio.com",
+  projectId: "amigo-secreto-4fbd5",
+  storageBucket: "amigo-secreto-4fbd5.firebasestorage.app",
+  messagingSenderId: "426260095700",
+  appId: "1:426260095700:web:7be37a72233399a5ff9141"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const admin = document.getElementById("admin");
+const consulta = document.getElementById("consulta");
+const lista = document.getElementById("lista");
+
+async function add() {
+    const n = nome.value.trim();
+    const s = senha.value.trim();
+    if (!n || !s) return;
+
+    await db.collection("participantes").doc(n).set({ senha: s });
+    nome.value = senha.value = "";
+    carregar();
+}
+
+async function carregar() {
+    const snap = await db.collection("participantes").get();
+    lista.innerHTML = "";
+    snap.forEach(doc => lista.innerHTML += doc.id + "<br>");
+}
+
+async function sortear() {
+    const snap = await db.collection("participantes").get();
+    let nomes = snap.docs.map(d => d.id);
+
+    if (nomes.length < 2) return alert("Mínimo 2 pessoas");
+
+    let disp = [...nomes];
+    for (let p of nomes) {
+        let poss = disp.filter(n => n !== p);
+        let esc = poss[Math.floor(Math.random() * poss.length)];
+        await db.collection("sorteados").doc(p).set({ amigo: esc });
+        disp = disp.filter(n => n !== esc);
+    }
+
+    await db.collection("config").doc("estado").set({ sorteio: true });
+    admin.classList.add("hidden");
+    consulta.classList.remove("hidden");
+}
+
+async function ver() {
+    const n = consultaNome.value.trim();
+    const s = consultaSenha.value.trim();
+
+    const user = await db.collection("participantes").doc(n).get();
+    if (!user.exists || user.data().senha !== s) {
+        return alert("Nome ou senha inválidos");
+    }
+
+    const doc = await db.collection("sorteados").doc(n).get();
+    if (!doc.exists) return alert("Resultado já visto");
+
+    alert("🎁 Seu amigo secreto é:\n\n" + doc.data().amigo);
+    await db.collection("sorteados").doc(n).delete();
+}
+
+async function iniciar() {
+    const estado = await db.collection("config").doc("estado").get();
+    if (estado.exists && estado.data().sorteio) {
+        admin.classList.add("hidden");
+        consulta.classList.remove("hidden");
+    }
+    carregar();
+}
+
+iniciar();
+</script>
+
+</body>
+</html>
